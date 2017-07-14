@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context 
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util 
+                           http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <bean id="API_DISPATCHER" class="api.ApiDispatcher" init-method="init"
+          destroy-method="destroy"></bean>
+
+    <bean id="CQL_DELEGATOR" class="com.github.ddth.mappings.cql.CqlDelegator" init-method="init"
+          destroy-method="destroy">
+        <property name="keyspace" ref="_cass_keyspace"/>
+        <property name="username" ref="_cass_username"/>
+        <property name="password" ref="_cass_password"/>
+        <property name="hostsAndPorts" ref="_cass_hostsAndPorts"/>
+    </bean>
+
+    <bean id="DAO_MAPPING_ONE_ONE" class="com.github.ddth.mappings.cql.CqlMappingOneOneDao" init-method="init"
+          destroy-method="destroy">
+        <property name="cqlDelegator" ref="CQL_DELEGATOR"/>
+        <property name="cacheFactory" ref="CACHE_FACTORY"/>
+        <property name="tableData" value="mapoo_data"/>
+        <property name="tableStats" value="mapoo_stats"/>
+        <property name="cacheName" value="MAPOO"/>
+    </bean>
+
+    <!-- MySQL/HikariCP datasource -->
+    <!--
+    <bean id="DATASOURCE_MYSQL" class="com.zaxxer.hikari.HikariDataSource"
+        scope="singleton">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
+        <property name="jdbcUrl" ref="_db_url" />
+        <property name="username" ref="_db_user" />
+        <property name="password" ref="_db_password" />
+        <property name="connectionTimeout" value="5000" />
+        <property name="idleTimeout" value="900000" />
+        <property name="maxLifetime" value="1800000" />
+        <property name="connectionTestQuery" value="SELECT 1" />
+        <property name="validationTimeout" value="1500" />
+        <property name="maximumPoolSize" value="4" />
+        <property name="initializationFailTimeout" value="-1" />
+        <property name="connectionInitSql" value="SET NAMES 'utf8'" />
+        <property name="leakDetectionThreshold" value="300000" />
+    </bean>
+    -->
+
+    <!-- beans for development env -->
+    <beans>
+        <bean id="CACHE_FACTORY" class="com.github.ddth.cacheadapter.redis.RedisCacheFactory"
+              scope="singleton" init-method="init" destroy-method="destroy">
+            <property name="defaultExpireAfterAccess" value="-1"/>
+            <property name="defaultExpireAfterWrite" value="300"/>
+            <property name="redisHostAndPort" value="localhost:6379"/>
+            <!-- <property name="redisPassword" ref="_redis_password" /> -->
+            <property name="keyMode" value="NAMESPACE"/>
+            <property name="cacheEntrySerializer">
+                <bean class="com.github.ddth.cacheadapter.ces.DefaultCacheEntrySerializer"
+                      init-method="init" destroy-method="destroy">
+                    <!--
+                    <property name="compressor">
+                        <bean class="com.github.ddth.cacheadapter.compressor.JdkDeflateCompressor"
+                              init-method="init" destroy-method="destroy">
+                            <property name="compressionLevel" value="1" />
+                        </bean>
+                    </property>
+                    -->
+                </bean>
+            </property>
+        </bean>
+
+        <bean id="_cass_keyspace" class="java.lang.String">
+            <constructor-arg value="onpar"/>
+        </bean>
+        <bean id="_cass_username" class="java.lang.String">
+            <constructor-arg value="onpar"/>
+        </bean>
+        <bean id="_cass_password" class="java.lang.String">
+            <constructor-arg value="onpar"/>
+        </bean>
+        <bean id="_cass_hostsAndPorts" class="java.lang.String">
+            <constructor-arg value="localhost"/>
+        </bean>
+    </beans>
+
+    <!-- beans for production env -->
+    <beans profile="prod,production">
+        <bean id="CACHE_FACTORY" class="com.github.ddth.cacheadapter.redis.RedisCacheFactory"
+              scope="singleton" init-method="init" destroy-method="destroy">
+            <property name="defaultExpireAfterAccess" value="-1"/>
+            <property name="defaultExpireAfterWrite" value="300"/>
+            <property name="redisHostAndPort" value="localhost:6379"/>
+            <property name="keyMode" value="NAMESPACE"/>
+            <property name="cacheEntrySerializer">
+                <bean class="com.github.ddth.cacheadapter.ces.DefaultCacheEntrySerializer"
+                      init-method="init" destroy-method="destroy">
+                    <!--
+                    <property name="compressor">
+                        <bean class="com.github.ddth.cacheadapter.compressor.JdkDeflateCompressor"
+                              init-method="init" destroy-method="destroy">
+                            <property name="compressionLevel" value="1" />
+                        </bean>
+                    </property>
+                    -->
+                </bean>
+            </property>
+        </bean>
+
+        <bean id="_cass_keyspace" class="java.lang.String">
+            <constructor-arg value="onpar"/>
+        </bean>
+        <bean id="_cass_username" class="java.lang.String">
+            <constructor-arg value="onpar"/>
+        </bean>
+        <bean id="_cass_password" class="java.lang.String">
+            <constructor-arg value="onpar"/>
+        </bean>
+        <bean id="_cass_hostsAndPorts" class="java.lang.String">
+            <constructor-arg value="localhost"/>
+        </bean>
+    </beans>
+</beans>
+
