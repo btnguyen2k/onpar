@@ -119,11 +119,12 @@ public abstract class AbstractMappingOneOneDao extends BaseDao implements IMappi
      * @param namespace
      * @param obj
      * @param target
-     * @param existing
+     * @param existingOT
+     * @param existingTO
      * @return
      */
     protected abstract MappingsUtils.DaoResult storageMap(String namespace, String obj, String
-            target, MappingBo existing);
+            target, MappingBo existingOT, MappingBo existingTO);
 
     /**
      * Remove mapping {@code object <-> target} from storage. Sub-class will implement this method.
@@ -139,25 +140,34 @@ public abstract class AbstractMappingOneOneDao extends BaseDao implements IMappi
     /*----------------------------------------------------------------------*/
 
     /**
-     * {@inheritDoc}
+     * Map an object to target.
+     * <p>Mapping will fail if {@code obj} is currently mapped to another target.</p>
+     *
+     * @param namespace
+     * @param obj
+     * @param target
+     * @return
      */
     @Override
     public MappingsUtils.DaoResult map(String namespace, String obj, String target) {
+        MappingBo existingOT = getMappingObjTarget(namespace, obj);
+        MappingBo existingTO = getMappingTargetObj(namespace, target);
         MappingsUtils.DaoResult mapResult = null;
-        MappingBo existing = getMappingObjTarget(namespace, obj);
-        if (existing == null || !StringUtils.equals(target, existing.getTarget())) {
-            mapResult = storageMap(namespace, obj, target, existing);
+        if (existingOT == null || !StringUtils.equals(target, existingOT.getTarget())) {
+            mapResult = storageMap(namespace, obj, target, existingOT, existingTO);
             if (mapResult.status == MappingsUtils.DaoActionStatus.SUCCESSFUL ||
                     mapResult.status == MappingsUtils.DaoActionStatus.DUPLICATED) {
-                invalidate(existing, MappingsUtils.CacheInvalidationType.DELETE);
+                invalidate(existingOT, MappingsUtils.CacheInvalidationType.DELETE);
+                invalidate(existingTO, MappingsUtils.CacheInvalidationType.DELETE);
                 invalidate((MappingBo) mapResult.output,
                         MappingsUtils.CacheInvalidationType.CREATE);
             }
         }
         if (mapResult == null) {
-            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.SUCCESSFUL, existing);
+            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.SUCCESSFUL,
+                    existingOT);
         } else {
-            return new MappingsUtils.DaoResult(mapResult.status, existing);
+            return new MappingsUtils.DaoResult(mapResult.status, existingOT);
         }
     }
 

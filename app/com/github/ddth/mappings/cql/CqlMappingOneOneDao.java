@@ -6,7 +6,6 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Statement;
 import com.github.ddth.cql.CqlUtils;
 import com.github.ddth.mappings.AbstractMappingOneOneDao;
-import com.github.ddth.mappings.IMappingDao;
 import com.github.ddth.mappings.MappingBo;
 import com.github.ddth.mappings.utils.MappingsUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,8 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * CQL-implementation of 1-1 mapping.
@@ -27,7 +26,7 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
 
     private CqlDelegator cqlDelegator;
 
-    private String tableData = "mapoo", tableStats = "mapoo_stats";
+    private String tableData = "mapoo";
 
     public CqlDelegator getCqlDelegator() {
         return cqlDelegator;
@@ -47,15 +46,6 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
         return this;
     }
 
-    public String getTableStats() {
-        return tableStats;
-    }
-
-    public CqlMappingOneOneDao setTableStats(String tableStats) {
-        this.tableStats = tableStats;
-        return this;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -63,8 +53,6 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
     public CqlMappingOneOneDao init() {
         super.init();
 
-        pstmUpdateStats = cqlDelegator.prepareStatement(MessageFormat.format(CQL_UPDATE_STATS,
-                tableStats));
 
         pstmDeleteData = cqlDelegator
                 .prepareStatement(MessageFormat.format(CQL_DELETE_DATA, tableData));
@@ -82,7 +70,6 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
         return this;
     }
 
-    private PreparedStatement pstmUpdateStats;
     private PreparedStatement pstmDeleteData, pstmDeleteDataIfExists;
     private PreparedStatement pstmInsertData, pstmInsertDataIfNotExists;
     private PreparedStatement pstmSeleteData;
@@ -110,16 +97,11 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
     private final static String CQL_SELECT_DATA = "SELECT * FROM {0} WHERE " + StringUtils.join
             (_WHERE_DATA, " AND ");
 
-    private final static String COL_STATS_NAMESPACE = "m_namespace";
-    private final static String COL_STATS_KEY = "m_key";
-    private final static String COL_STATS_VALUE = "m_value";
-    private final static String[] _WHERE_STATS = {COL_STATS_NAMESPACE + "=?", COL_STATS_KEY + "=?"};
-    private final static String CQL_UPDATE_STATS =
-            "UPDATE {0} SET " + COL_STATS_VALUE + "=" + COL_STATS_VALUE + "+? WHERE " +
-                    StringUtils.join(_WHERE_STATS, " AND ");
 
-    private final static String DATA_TYPE_OBJ_TARGET = "obj:target";
-    private final static String DATA_TYPE_TARGET_OBJ = "target:obj";
+    public final static String DATA_TYPE_OBJ_TARGET = "obj:target";
+    public final static String DATA_TYPE_TARGET_OBJ = "target:obj";
+    public final static String STATS_MAPPING = "mappings-oo";
+    public final static String STATS_KEY_TOTAL_ITEMS = "total-items";
 
     private MappingBo newMappingBo(Row row) {
         if (row == null) {
@@ -146,8 +128,16 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
      * {@inheritDoc}
      */
     @Override
+    public Map<String, Long> getStats(String namespace) {
+        return cqlDelegator.getAllStats(STATS_MAPPING, namespace);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected MappingBo storageGetMappingObjTarget(String namespace, String obj) {
-        Row row = cqlDelegator.seletOneRow(pstmSeleteData, namespace, DATA_TYPE_OBJ_TARGET, obj);
+        Row row = cqlDelegator.selectOneRow(pstmSeleteData, namespace, DATA_TYPE_OBJ_TARGET, obj);
         return newMappingBo(row);
     }
 
@@ -156,24 +146,34 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
      */
     @Override
     protected MappingBo storageGetMappingTargetObj(String namespace, String target) {
-        Row row = cqlDelegator.seletOneRow(pstmSeleteData, namespace, DATA_TYPE_TARGET_OBJ, target);
+        Row row = cqlDelegator
+                .selectOneRow(pstmSeleteData, namespace, DATA_TYPE_TARGET_OBJ, target);
         return newMappingBo(row);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * <ul>
+     * <li>Remove existing {@code old-target <- object}, if any.</li>
+     * <li>Store mapping {@code object -> target}, will override any existing {@code object ->
+     * old-target}.</li>
+     * <li>Store mapping {@code target <- object}.</li>
+     * <li>All operations above are within a logged batch.</li>
+     * <li>Finally, update stats if needed.</li>
+     * </ul>
      */
     @Override
     protected MappingsUtils.DaoResult storageMap(String namespace, String obj, String target,
-            MappingBo existing) {
+            MappingBo existingOT, MappingBo existingTO) {
         long now = System.currentTimeMillis();
         ByteBuffer targetTime = MappingsUtils.seEncodeAsByteBuffer(target, String.valueOf(now));
         ByteBuffer objTime = MappingsUtils.seEncodeAsByteBuffer(obj, String.valueOf(now));
 
         List<Statement> stmList = new ArrayList<>();
-        if (existing != null) {
+        if (existingTO != null) {
             stmList.add(CqlUtils.bindValues(pstmDeleteData, namespace, DATA_TYPE_TARGET_OBJ,
-                    existing.getTarget()));
+                    existingTO.getTarget()));
         }
         stmList.add(CqlUtils.bindValues(pstmInsertData, namespace, DATA_TYPE_OBJ_TARGET, obj,
                 targetTime));
@@ -181,8 +181,8 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
                 objTime));
         ResultSet rs = cqlDelegator.executeBatch(stmList.toArray(new Statement[0]));
         if (rs.wasApplied()) {
-            if (existing == null) {
-                storageUpdateStats(namespace, "total", 1);
+            if (existingOT == null) {
+                storageUpdateStats(namespace, STATS_KEY_TOTAL_ITEMS, 1);
             }
             return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.SUCCESSFUL);
         } else {
@@ -192,6 +192,13 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
 
     /**
      * {@inheritDoc}
+     *
+     * <ul>
+     * <li>Remove mapping {@code object -> target}.</li>
+     * <li>Remove mapping {@code target <- object}.</li>
+     * <li>All operations above are within a logged batch.</li>
+     * <li>Finally, update stats if needed.</li>
+     * </ul>
      */
     @Override
     protected MappingsUtils.DaoResult storageUnmap(String namespace, String obj, String target) {
@@ -201,14 +208,14 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
                 DATA_TYPE_TARGET_OBJ, target);
         ResultSet rs = cqlDelegator.executeBatch(stmDeleteObjTarget, stmDeleteTargetObj);
         if (rs.wasApplied()) {
-            storageUpdateStats(namespace, "total", -1);
-            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.NOT_FOUND);
+            storageUpdateStats(namespace, STATS_KEY_TOTAL_ITEMS, -1);
+            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.SUCCESSFUL);
         } else {
-            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.ERROR);
+            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.NOT_FOUND);
         }
     }
 
     private void storageUpdateStats(String namespace, String key, long value) {
-        cqlDelegator.update(pstmUpdateStats, value, namespace, key);
+        cqlDelegator.updateStats(STATS_MAPPING, namespace, key, value);
     }
 }

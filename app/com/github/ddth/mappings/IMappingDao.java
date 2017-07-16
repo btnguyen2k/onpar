@@ -3,10 +3,11 @@ package com.github.ddth.mappings;
 import com.github.ddth.mappings.utils.MappingsUtils;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Mappings API.
- * 
+ *
  * @author Thanh Nguyen <btnguyen2k@gmail.com>
  * @since 0.1.0
  */
@@ -48,4 +49,12 @@ public interface IMappingDao {
      * @return
      */
     public Collection<MappingBo> getMappingsForTarget(String namespace, String target);
+
+    /**
+     * Get mappings stats.
+     *
+     * @param namespace
+     * @return
+     */
+    public Map<String, Long> getStats(String namespace);
 }

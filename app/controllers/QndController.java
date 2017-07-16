@@ -29,7 +29,12 @@ public class QndController extends BaseController {
             MappingsUtils.DaoResult result = mappingOneOne.unmap(namespace, obj, target);
             return ok(result.toString());
         }
-        Collection<MappingBo> result = mappingOneOne.getMappingsForObject(namespace, obj);
-        return ok(result.toString());
+
+        Collection<MappingBo> mappingsForObject = mappingOneOne
+                .getMappingsForObject(namespace, obj);
+        Collection<MappingBo> mappingsForTarget = mappingOneOne.getMappingsForTarget(namespace,
+                target);
+
+        return ok(mappingsForObject + "<br>\n" + mappingsForTarget);
     }
 }

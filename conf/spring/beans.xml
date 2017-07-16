@@ -15,6 +15,7 @@
 
     <bean id="CQL_DELEGATOR" class="com.github.ddth.mappings.cql.CqlDelegator" init-method="init"
           destroy-method="destroy">
+        <property name="tableStats" value="mappings_stats" />
         <property name="keyspace" ref="_cass_keyspace"/>
         <property name="username" ref="_cass_username"/>
         <property name="password" ref="_cass_password"/>
@@ -26,7 +27,6 @@
         <property name="cqlDelegator" ref="CQL_DELEGATOR"/>
         <property name="cacheFactory" ref="CACHE_FACTORY"/>
         <property name="tableData" value="mapoo_data"/>
-        <property name="tableStats" value="mapoo_stats"/>
         <property name="cacheName" value="MAPOO"/>
     </bean>
 
