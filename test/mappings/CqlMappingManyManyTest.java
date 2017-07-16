@@ -2,21 +2,22 @@ package mappings;
 
 import com.github.ddth.mappings.IMappingDao;
 import com.github.ddth.mappings.cql.CqlDelegator;
+import com.github.ddth.mappings.cql.CqlMappingManyManyDao;
 import com.github.ddth.mappings.cql.CqlMappingOneOneDao;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-public class CqlMappingOneOneTest extends BaseMappingOneOneTest {
+public class CqlMappingManyManyTest extends BaseMappingManyManyTest {
 
-    public CqlMappingOneOneTest(String testName) {
+    public CqlMappingManyManyTest(String testName) {
         super(testName);
     }
 
     public static Test suite() {
-        return new TestSuite(CqlMappingOneOneTest.class);
+        return new TestSuite(CqlMappingManyManyTest.class);
     }
 
-    protected final static String TABLE_DATA = "mapoo_data";
+    protected final static String TABLE_DATA = "mapmm_data";
     protected final static String TABLE_STATS = "mappings_stats";
 
     protected IMappingDao initDaoInstance() {
@@ -32,8 +33,8 @@ public class CqlMappingOneOneTest extends BaseMappingOneOneTest {
         String CQL = "DROP TABLE IF EXISTS " + TABLE_DATA;
         cqlDelegator.update(cqlDelegator.prepareStatement(CQL));
         CQL = "CREATE TABLE IF NOT EXISTS " + TABLE_DATA + "(m_namespace VARCHAR," +
-                "m_type VARCHAR,m_key VARCHAR,m_data BLOB," +
-                "PRIMARY KEY(m_namespace, m_type, m_key))" +
+                "m_type VARCHAR,m_key VARCHAR,m_value VARCHAR,m_data BLOB," +
+                "PRIMARY KEY(m_namespace,m_type,m_key,m_value))" +
                 "WITH COMPACT STORAGE";
         cqlDelegator.update(cqlDelegator.prepareStatement(CQL));
 
@@ -41,11 +42,11 @@ public class CqlMappingOneOneTest extends BaseMappingOneOneTest {
         cqlDelegator.update(cqlDelegator.prepareStatement(CQL));
         CQL = "CREATE TABLE IF NOT EXISTS " + TABLE_STATS + "(m_mapping VARCHAR," +
                 "m_namespace VARCHAR,m_key VARCHAR,m_value COUNTER," +
-                "PRIMARY KEY(m_mapping, m_namespace, m_key))" +
+                "PRIMARY KEY(m_mapping,m_namespace,m_key))" +
                 "WITH COMPACT STORAGE";
         cqlDelegator.update(cqlDelegator.prepareStatement(CQL));
 
-        CqlMappingOneOneDao mappingsDao = new CqlMappingOneOneDao();
+        CqlMappingManyManyDao mappingsDao = new CqlMappingManyManyDao();
         mappingsDao.setCqlDelegator(cqlDelegator).setTableData(TABLE_DATA);
         mappingsDao.init();
 

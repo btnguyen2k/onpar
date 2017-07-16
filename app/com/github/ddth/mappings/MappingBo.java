@@ -1,8 +1,10 @@
 package com.github.ddth.mappings;
 
-import java.util.Date;
-
 import com.github.ddth.dao.BaseBo;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.Date;
 
 /**
  * Mapping {@code object <--> target}.
@@ -105,6 +107,34 @@ public class MappingBo extends BaseBo {
 
     public MappingBo setInfo(String value) {
         return (MappingBo) setAttribute(ATTR_INFO, value != null ? value.trim() : null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        HashCodeBuilder hcb = new HashCodeBuilder(19, 81);
+        hcb.append(getNamespace()).append(getObject()).append(getTarget());
+        return hcb.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj instanceof MappingBo) {
+            MappingBo other = (MappingBo) obj;
+            EqualsBuilder eq = new EqualsBuilder();
+            eq.append(getNamespace(), other.getNamespace()).append(getObject(), other.getObject())
+                    .append(getTarget(), other.getTarget());
+            return eq.isEquals();
+        }
+        return false;
     }
 
 }

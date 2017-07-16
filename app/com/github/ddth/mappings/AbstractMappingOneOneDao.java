@@ -9,7 +9,7 @@ import java.util.Collections;
 
 /**
  * Abstract implementation of 1-1 mappings.
- * <p>
+ *
  * <p>1-1 mappings: object can be mapped to only one target and vice versa.</p>
  *
  * @author Thanh Nguyen <btnguyen2k@gmail.com>
@@ -140,13 +140,7 @@ public abstract class AbstractMappingOneOneDao extends BaseDao implements IMappi
     /*----------------------------------------------------------------------*/
 
     /**
-     * Map an object to target.
-     * <p>Mapping will fail if {@code obj} is currently mapped to another target.</p>
-     *
-     * @param namespace
-     * @param obj
-     * @param target
-     * @return
+     * {@inheritDoc}
      */
     @Override
     public MappingsUtils.DaoResult map(String namespace, String obj, String target) {
