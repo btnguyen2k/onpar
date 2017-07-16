@@ -234,11 +234,11 @@ public class CqlMappingManyManyDao extends AbstractMappingManyManyDao {
         ResultSet rs = cqlDelegator.executeBatch(stmDeleteObjTarget, stmDeleteTargetObj);
         if (rs.wasApplied()) {
             if (existingOT == null || existingOT.size() == 0 ||
-                    existingOT.contains(mappingToRemove)) {
+                    (existingOT.size() == 1 && existingOT.contains(mappingToRemove))) {
                 storageUpdateStats(namespace, STATS_KEY_TOTAL_OBJS, -1);
             }
             if (existingTO == null || existingTO.size() == 0 ||
-                    existingTO.contains(mappingToRemove)) {
+                    (existingTO.size() == 1 && existingTO.contains(mappingToRemove))) {
                 storageUpdateStats(namespace, STATS_KEY_TOTAL_TARGETS, -1);
             }
             return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.SUCCESSFUL,

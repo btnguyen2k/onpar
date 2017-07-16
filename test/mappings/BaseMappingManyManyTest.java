@@ -160,6 +160,91 @@ public abstract class BaseMappingManyManyTest extends TestCase {
     }
 
     @Test
+    public void testMapUnmapMulti() {
+        String object1 = "one";
+        String target1 = "1";
+        String object2 = "two";
+        String target2 = "2";
+        String object3 = "three";
+        String target3 = "3";
+
+        {
+            //map1
+            MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object1, target1);
+            assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
+            assertTrue(daoResult.output instanceof Collection);
+            Collection<MappingBo> existing = (Collection<MappingBo>) daoResult.output;
+            assertEquals(0, existing.size());
+
+            assertTotalItems(1, 1);
+            assertTargetsForObject(Collections.singleton(target1), object1);
+            assertObjectsForTarget(Collections.singleton(object1), target1);
+            assertObjectsForTarget(Collections.EMPTY_SET, target2);
+            assertObjectsForTarget(Collections.EMPTY_SET, target3);
+        }
+
+        {
+            //map2
+            MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object1, target2);
+            assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
+            assertTrue(daoResult.output instanceof Collection);
+            Collection<MappingBo> existing = (Collection<MappingBo>) daoResult.output;
+            assertEquals(1, existing.size());
+
+            assertTotalItems(1, 2);
+            assertTargetsForObject(new HashSet<>(Arrays.asList(target1, target2)), object1);
+            assertObjectsForTarget(Collections.singleton(object1), target1);
+            assertObjectsForTarget(Collections.singleton(object1), target2);
+            assertObjectsForTarget(Collections.EMPTY_SET, target3);
+        }
+
+        {
+            //unmap1
+            MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object1, target3);
+            assertEquals(MappingsUtils.DaoActionStatus.NOT_FOUND, daoResult.status);
+            assertTrue(daoResult.output instanceof Collection);
+            Collection<MappingBo> existing = (Collection<MappingBo>) daoResult.output;
+            assertEquals(2, existing.size());
+
+            assertTotalItems(1, 2);
+            assertTargetsForObject(new HashSet<>(Arrays.asList(target1, target2)), object1);
+            assertObjectsForTarget(Collections.singleton(object1), target1);
+            assertObjectsForTarget(Collections.singleton(object1), target2);
+            assertObjectsForTarget(Collections.EMPTY_SET, target3);
+        }
+
+        {
+            //unmap2
+            MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object1, target1);
+            assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
+            assertTrue(daoResult.output instanceof Collection);
+            Collection<MappingBo> existing = (Collection<MappingBo>) daoResult.output;
+            assertEquals(2, existing.size());
+
+            assertTotalItems(1, 1);
+            assertTargetsForObject(new HashSet<>(Arrays.asList(target2)), object1);
+            assertObjectsForTarget(Collections.EMPTY_SET, target1);
+            assertObjectsForTarget(Collections.singleton(object1), target2);
+            assertObjectsForTarget(Collections.EMPTY_SET, target3);
+        }
+
+        {
+            //unmap3
+            MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object1, target2);
+            assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
+            assertTrue(daoResult.output instanceof Collection);
+            Collection<MappingBo> existing = (Collection<MappingBo>) daoResult.output;
+            assertEquals(1, existing.size());
+
+            assertTotalItems(0, 0);
+            assertTargetsForObject(Collections.EMPTY_SET, object1);
+            assertObjectsForTarget(Collections.EMPTY_SET, target1);
+            assertObjectsForTarget(Collections.EMPTY_SET, target2);
+            assertObjectsForTarget(Collections.EMPTY_SET, target3);
+        }
+    }
+
+    @Test
     public void testMapMulti() {
         String object1 = "one";
         String target1 = "1";
@@ -226,7 +311,7 @@ public abstract class BaseMappingManyManyTest extends TestCase {
     }
 
     @Test
-    public void testMapStatsGetMultiple() {
+    public void testMapStatsGetMulti() {
         Set<String> targets = new HashSet<>();
         for (int i = 1; i < 10; i++) {
             String object = "obj";
@@ -245,7 +330,7 @@ public abstract class BaseMappingManyManyTest extends TestCase {
     }
 
     @Test
-    public void testMapStatsGetSameObjTargetMultipleTimes() {
+    public void testMapStatsGetSameObjTargetMulti() {
         String object = "object";
         String target = "target";
         MappingsUtils.DaoResult daoResult;
