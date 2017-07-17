@@ -116,26 +116,21 @@ public abstract class AbstractMappingOneOneDao extends BaseDao implements IMappi
     /**
      * Save mapping {@code object <-> target} to storage. Sub-class will implement this method.
      *
-     * @param namespace
-     * @param obj
-     * @param target
+     * @param mappingToAdd
      * @param existingOT
      * @param existingTO
      * @return
      */
-    protected abstract MappingsUtils.DaoResult storageMap(String namespace, String obj, String
-            target, MappingBo existingOT, MappingBo existingTO);
+    protected abstract MappingsUtils.DaoResult storageMap(MappingBo mappingToAdd,
+            MappingBo existingOT, MappingBo existingTO);
 
     /**
      * Remove mapping {@code object <-> target} from storage. Sub-class will implement this method.
      *
-     * @param namespace
-     * @param obj
-     * @param target
+     * @param mappingToRemove
      * @return
      */
-    protected abstract MappingsUtils.DaoResult storageUnmap(String namespace, String obj,
-            String target);
+    protected abstract MappingsUtils.DaoResult storageUnmap(MappingBo mappingToRemove);
 
     /*----------------------------------------------------------------------*/
 
@@ -144,24 +139,24 @@ public abstract class AbstractMappingOneOneDao extends BaseDao implements IMappi
      */
     @Override
     public MappingsUtils.DaoResult map(String namespace, String obj, String target) {
+        MappingBo mappingToAdd = MappingBo.newInstance(namespace, obj, target);
         MappingBo existingOT = getMappingObjTarget(namespace, obj);
         MappingBo existingTO = getMappingTargetObj(namespace, target);
         MappingsUtils.DaoResult mapResult = null;
         if (existingOT == null || !StringUtils.equals(target, existingOT.getTarget())) {
-            mapResult = storageMap(namespace, obj, target, existingOT, existingTO);
+            mapResult = storageMap(mappingToAdd, existingOT, existingTO);
             if (mapResult.status == MappingsUtils.DaoActionStatus.SUCCESSFUL ||
                     mapResult.status == MappingsUtils.DaoActionStatus.DUPLICATED) {
                 invalidate(existingOT, MappingsUtils.CacheInvalidationType.DELETE);
                 invalidate(existingTO, MappingsUtils.CacheInvalidationType.DELETE);
-                invalidate((MappingBo) mapResult.output,
-                        MappingsUtils.CacheInvalidationType.CREATE);
+                invalidate(mapResult.getSingleOutput(), MappingsUtils.CacheInvalidationType.CREATE);
             }
         }
         if (mapResult == null) {
             return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.SUCCESSFUL,
-                    existingOT);
+                    Collections.singleton(existingOT));
         } else {
-            return new MappingsUtils.DaoResult(mapResult.status, existingOT);
+            return new MappingsUtils.DaoResult(mapResult.status, Collections.singleton(existingOT));
         }
     }
 
@@ -170,18 +165,20 @@ public abstract class AbstractMappingOneOneDao extends BaseDao implements IMappi
      */
     @Override
     public MappingsUtils.DaoResult unmap(String namespace, String obj, String target) {
+        MappingBo mappingToRemove = MappingBo.newInstance(namespace, obj, target);
         MappingsUtils.DaoResult unmapResult = null;
         MappingBo existing = getMappingObjTarget(namespace, obj);
         if (existing != null && StringUtils.equals(target, existing.getTarget())) {
-            unmapResult = storageUnmap(namespace, obj, target);
+            unmapResult = storageUnmap(mappingToRemove);
             if (unmapResult.status == MappingsUtils.DaoActionStatus.SUCCESSFUL) {
                 invalidate(existing, MappingsUtils.CacheInvalidationType.DELETE);
             }
         }
         if (unmapResult == null) {
-            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.NOT_FOUND, existing);
+            return new MappingsUtils.DaoResult(MappingsUtils.DaoActionStatus.NOT_FOUND,
+                    Collections.singleton(existing));
         } else {
-            return new MappingsUtils.DaoResult(unmapResult.status, existing);
+            return new MappingsUtils.DaoResult(unmapResult.status, Collections.singleton(existing));
         }
     }
 

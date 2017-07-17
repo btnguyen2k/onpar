@@ -1,5 +1,6 @@
 package com.github.ddth.mappings.utils;
 
+import com.github.ddth.mappings.MappingBo;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -7,6 +8,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * Utility class.
@@ -39,16 +42,21 @@ public class MappingsUtils {
 
     public static class DaoResult {
         public final DaoActionStatus status;
-        public final Object output;
+        public final Collection<MappingBo> output = new HashSet<>();
 
         public DaoResult(DaoActionStatus status) {
-            this.status = status;
-            this.output = null;
+            this(status, null);
         }
 
-        public DaoResult(DaoActionStatus status, Object output) {
+        public DaoResult(DaoActionStatus status, Collection<MappingBo> output) {
             this.status = status;
-            this.output = output;
+            if (output != null) {
+                output.stream().filter(bo -> bo != null).allMatch(bo -> this.output.add(bo));
+            }
+        }
+
+        public MappingBo getSingleOutput() {
+            return output.stream().findAny().orElse(null);
         }
 
         /**

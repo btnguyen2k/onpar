@@ -164,8 +164,11 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
      * </ul>
      */
     @Override
-    protected MappingsUtils.DaoResult storageMap(String namespace, String obj, String target,
-            MappingBo existingOT, MappingBo existingTO) {
+    protected MappingsUtils.DaoResult storageMap(MappingBo mappingToAdd, MappingBo existingOT,
+            MappingBo existingTO) {
+        final String namespace = mappingToAdd.getNamespace();
+        final String obj = mappingToAdd.getObject();
+        final String target = mappingToAdd.getTarget();
         long now = System.currentTimeMillis();
         ByteBuffer targetTime = MappingsUtils.seEncodeAsByteBuffer(target, String.valueOf(now));
         ByteBuffer objTime = MappingsUtils.seEncodeAsByteBuffer(obj, String.valueOf(now));
@@ -201,7 +204,10 @@ public class CqlMappingOneOneDao extends AbstractMappingOneOneDao {
      * </ul>
      */
     @Override
-    protected MappingsUtils.DaoResult storageUnmap(String namespace, String obj, String target) {
+    protected MappingsUtils.DaoResult storageUnmap(MappingBo mappingToRemove) {
+        final String namespace = mappingToRemove.getNamespace();
+        final String obj = mappingToRemove.getObject();
+        final String target = mappingToRemove.getTarget();
         Statement stmDeleteObjTarget = CqlUtils.bindValues(pstmDeleteDataIfExists, namespace,
                 DATA_TYPE_OBJ_TARGET, obj);
         Statement stmDeleteTargetObj = CqlUtils.bindValues(pstmDeleteDataIfExists, namespace,

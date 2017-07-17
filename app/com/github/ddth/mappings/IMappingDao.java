@@ -18,7 +18,7 @@ public interface IMappingDao {
      * @param namespace
      * @param obj
      * @param target
-     * @return the existing object that mapped to the target (if any)
+     * @return existing mappings {@code object -> targets} if any
      */
     public MappingsUtils.DaoResult map(String namespace, String obj, String target);
 
@@ -28,7 +28,7 @@ public interface IMappingDao {
      * @param namespace
      * @param obj
      * @param target
-     * @return the existing object that is mapping to the target (if any)
+     * @return existing mappings {@code object -> targets} if any
      */
     public MappingsUtils.DaoResult unmap(String namespace, String obj, String target);
 

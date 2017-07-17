@@ -84,7 +84,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //map
             MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object1, target1);
             assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-            assertNull(daoResult.output);
+            assertEquals(0, daoResult.output.size());
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target1), object1);
@@ -95,7 +95,12 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //unmap1
             MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object1, target2);
             assertEquals(MappingsUtils.DaoActionStatus.NOT_FOUND, daoResult.status);
-            assertNotNull(daoResult.output);
+            assertEquals(1, daoResult.output.size());
+            MappingBo existing = daoResult.getSingleOutput();
+            assertNotNull(existing);
+            assertEquals(NAMESPACE, existing.getNamespace());
+            assertEquals(object1, existing.getObject());
+            assertEquals(target1, existing.getTarget());
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target1), object1);
@@ -108,7 +113,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //unmap2
             MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object2, target1);
             assertEquals(MappingsUtils.DaoActionStatus.NOT_FOUND, daoResult.status);
-            assertNull(daoResult.output);
+            assertEquals(0, daoResult.output.size());
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target1), object1);
@@ -121,7 +126,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //unmap3
             MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object2, target2);
             assertEquals(MappingsUtils.DaoActionStatus.NOT_FOUND, daoResult.status);
-            assertNull(daoResult.output);
+            assertEquals(0, daoResult.output.size());
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target1), object1);
@@ -134,7 +139,12 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //unmap4
             MappingsUtils.DaoResult daoResult = mappingsDao.unmap(NAMESPACE, object1, target1);
             assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-            assertNotNull(daoResult.output);
+            assertEquals(1, daoResult.output.size());
+            MappingBo existing = daoResult.getSingleOutput();
+            assertNotNull(existing);
+            assertEquals(NAMESPACE, existing.getNamespace());
+            assertEquals(object1, existing.getObject());
+            assertEquals(target1, existing.getTarget());
 
             assertTotalItems(0);
             assertTargetsForObject(Collections.EMPTY_SET, object1);
@@ -153,7 +163,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //map
             MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object1, target1);
             assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-            assertNull(daoResult.output);
+            assertEquals(0, daoResult.output.size());
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target1), object1);
@@ -164,7 +174,12 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             //remap
             MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object1, target2);
             assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-            assertNotNull(daoResult.output);
+            assertEquals(1, daoResult.output.size());
+            MappingBo existing = daoResult.getSingleOutput();
+            assertNotNull(existing);
+            assertEquals(NAMESPACE, existing.getNamespace());
+            assertEquals(object1, existing.getObject());
+            assertEquals(target1, existing.getTarget());
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target2), object1);
@@ -178,7 +193,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
         String target = "1";
         MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object, target);
         assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-        assertNull(daoResult.output);
+        assertEquals(0, daoResult.output.size());
 
         assertTotalItems(1);
         assertTargetsForObject(Collections.singleton(target), object);
@@ -192,7 +207,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
             String target = "target-" + i;
             MappingsUtils.DaoResult daoResult = mappingsDao.map(NAMESPACE, object, target);
             assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-            assertNull(daoResult.output);
+            assertEquals(0, daoResult.output.size());
 
             assertTotalItems(i);
             assertTargetsForObject(Collections.singleton(target), object);
@@ -208,7 +223,7 @@ public abstract class BaseMappingOneOneTest extends TestCase {
 
         daoResult = mappingsDao.map(NAMESPACE, object, target);
         assertEquals(daoResult.status, MappingsUtils.DaoActionStatus.SUCCESSFUL);
-        assertNull(daoResult.output);
+        assertEquals(0, daoResult.output.size());
 
         assertTotalItems(1);
         assertTargetsForObject(Collections.singleton(target), object);
@@ -217,10 +232,12 @@ public abstract class BaseMappingOneOneTest extends TestCase {
         for (int i = 1; i < 10; i++) {
             daoResult = mappingsDao.map(NAMESPACE, object, target);
             assertEquals(MappingsUtils.DaoActionStatus.SUCCESSFUL, daoResult.status);
-            assertTrue(daoResult.output instanceof MappingBo);
-            assertEquals(((MappingBo) daoResult.output).getNamespace(), NAMESPACE);
-            assertEquals(((MappingBo) daoResult.output).getObject(), object);
-            assertEquals(((MappingBo) daoResult.output).getTarget(), target);
+            assertEquals(1, daoResult.output.size());
+            MappingBo existing = daoResult.getSingleOutput();
+            assertNotNull(existing);
+            assertEquals(existing.getNamespace(), NAMESPACE);
+            assertEquals(existing.getObject(), object);
+            assertEquals(existing.getTarget(), target);
 
             assertTotalItems(1);
             assertTargetsForObject(Collections.singleton(target), object);

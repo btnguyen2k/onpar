@@ -46,22 +46,13 @@ public abstract class AbstractMappingManyManyDao extends BaseDao implements IMap
         if (bo != null) {
             removeFromCache(cacheName, cacheKeyObjTarget(bo));
             removeFromCache(cacheName, cacheKeyTargetObj(bo));
-//            switch (cit) {
-//                case CREATE:
-//                case UPDATE:
-//                    putToCache(cacheName, cacheKeyObjTarget(bo), bo);
-//                    putToCache(cacheName, cacheKeyTargetObj(bo), bo);
-//                    break;
-//                case DELETE:
-//                    removeFromCache(cacheName, cacheKeyObjTarget(bo));
-//                    removeFromCache(cacheName, cacheKeyTargetObj(bo));
-//                    break;
-//            }
         }
     }
 
     /**
      * Get existing mappings {@code object -> targets}.
+     *
+     * <p>This method returns an empty set if no mapping found.</p>
      *
      * @param namespace
      * @param obj
@@ -79,6 +70,8 @@ public abstract class AbstractMappingManyManyDao extends BaseDao implements IMap
 
     /**
      * Get existing mappings {@code target -> objects}.
+     *
+     * <p>This method returns an empty set if no mapping found.</p>
      *
      * @param namespace
      * @param target
